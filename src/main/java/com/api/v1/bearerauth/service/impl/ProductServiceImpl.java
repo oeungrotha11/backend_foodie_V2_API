@@ -40,20 +40,29 @@ public class ProductServiceImpl implements ProductService {
         PageRequest pageable = PageRequest.of(page - 1, size, Sort.by(direction, "productId"));
 
         String q = search == null ? "" : search.trim().toLowerCase();
-        String c = category == null ? "" : category.trim().toLowerCase();
+        String c = category == null ? "" : category.trim();
 
         return productRepository.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             Join<Product, Category> categoryJoin = root.join("category", JoinType.LEFT);
 
             if (!q.isEmpty()) {
-                Predicate productNameLike = cb.like(cb.lower(root.get("productName")), "%" + q + "%");
-                Predicate categoryNameLike = cb.like(cb.lower(categoryJoin.get("categoryName")), "%" + q + "%");
+                Predicate productNameLike = cb.like(
+                        cb.lower(root.get("productName")), "%" + q + "%");
+                // The persistent JPA attribute is "name"; "categoryName" is only a convenience getter.
+                Predicate categoryNameLike = cb.like(
+                        cb.lower(categoryJoin.get("name")), "%" + q + "%");
                 predicates.add(cb.or(productNameLike, categoryNameLike));
             }
 
             if (!c.isEmpty()) {
-                predicates.add(cb.equal(cb.lower(categoryJoin.get("categoryName")), c));
+                // The admin dashboard sends categoryId. Also accept a category name for API compatibility.
+                if (c.matches("\\d+")) {
+                    predicates.add(cb.equal(categoryJoin.get("categoryId"), Long.valueOf(c)));
+                } else {
+                    predicates.add(cb.equal(
+                            cb.lower(categoryJoin.get("name")), c.toLowerCase()));
+                }
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
