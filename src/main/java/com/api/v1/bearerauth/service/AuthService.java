@@ -8,6 +8,8 @@ import com.api.v1.bearerauth.model.response.AppUserDto;
 
 public interface AuthService {
     AppUserDto create(AppUserAddRequest request);
+    void verifyEmail(String email, String code);
+    void resendVerificationCode(String email);
     TokenResponse login(AuthRequest request);
     TokenResponse googleLogin(String firebaseIdToken);
     TokenResponse refresh(RefreshTokenRequest request);
