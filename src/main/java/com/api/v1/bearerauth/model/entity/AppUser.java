@@ -28,6 +28,9 @@ public class AppUser implements UserDetails {
     @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean passwordConfigured = true;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Roles role = Roles.USER;
