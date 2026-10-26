@@ -28,6 +28,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
     implementation 'org.modelmapper:modelmapper:3.2.6'
+    implementation 'com.google.firebase:firebase-admin:9.7.0'
 
     def jjwtVersion = '0.13.0'
 
