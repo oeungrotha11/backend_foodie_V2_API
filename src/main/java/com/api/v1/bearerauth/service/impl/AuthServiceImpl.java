@@ -9,6 +9,9 @@ import com.api.v1.bearerauth.model.enumerate.Roles;
 import com.api.v1.bearerauth.repository.AppUserRepository;
 import com.api.v1.bearerauth.service.FirebaseTokenVerifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import java.security.SecureRandom;
 import java.util.Locale;
 import com.api.v1.bearerauth.model.request.AppUserAddRequest;
 import com.api.v1.bearerauth.model.request.AuthRequest;
@@ -39,10 +42,70 @@ public class AuthServiceImpl implements AuthService {
     private final FirebaseTokenVerifier firebaseTokenVerifier;
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JavaMailSender mailSender;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Override
+    @Transactional
     public AppUserDto create(AppUserAddRequest request) {
-        return appUserService.create(request);
+        AppUserDto dto = appUserService.create(request);
+        AppUser user = appUserRepository.findByEmail(request.getEmail().trim().toLowerCase(Locale.ROOT))
+                .orElseThrow(() -> new CustomException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not create account"));
+        sendVerificationCode(user);
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public void verifyEmail(String email, String code) {
+        AppUser user = appUserRepository.findByEmail(email.trim().toLowerCase(Locale.ROOT))
+                .orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "Invalid email or verification code"));
+
+        if (user.isEnabled()) {
+            return;
+        }
+        if (user.getEmailVerificationCodeHash() == null
+                || user.getEmailVerificationExpiresAt() == null
+                || user.getEmailVerificationExpiresAt().isBefore(LocalDateTime.now())
+                || !passwordEncoder.matches(code.trim(), user.getEmailVerificationCodeHash())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "Invalid or expired verification code");
+        }
+
+        user.setEnabled(true);
+        user.setEmailVerificationCodeHash(null);
+        user.setEmailVerificationExpiresAt(null);
+        user.setEmailVerificationLastSentAt(null);
+        appUserRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void resendVerificationCode(String email) {
+        AppUser user = appUserRepository.findByEmail(email.trim().toLowerCase(Locale.ROOT))
+                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Account not found"));
+        if (user.isEnabled()) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "Email is already verified");
+        }
+        if (user.getEmailVerificationLastSentAt() != null
+                && user.getEmailVerificationLastSentAt().plusSeconds(60).isAfter(LocalDateTime.now())) {
+            throw new CustomException(HttpStatus.TOO_MANY_REQUESTS, "Please wait 60 seconds before requesting another code");
+        }
+        sendVerificationCode(user);
+    }
+
+    private void sendVerificationCode(AppUser user) {
+        String code = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+        user.setEmailVerificationCodeHash(passwordEncoder.encode(code));
+        user.setEmailVerificationExpiresAt(LocalDateTime.now().plusMinutes(10));
+        user.setEmailVerificationLastSentAt(LocalDateTime.now());
+        appUserRepository.save(user);
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(user.getEmail());
+        message.setSubject("Foodie email verification code");
+        message.setText("Your Foodie verification code is: " + code
+                + "\n\nThis code expires in 10 minutes. If you did not request this, you can ignore this email.");
+        mailSender.send(message);
     }
 
     @Override
@@ -56,6 +119,9 @@ public class AuthServiceImpl implements AuthService {
         }
 
         AppUser user = (AppUser) appUserService.loadUserByUsername(email);
+        if (!user.isEnabled()) {
+            throw new CustomException(HttpStatus.FORBIDDEN, "Please verify your email before logging in");
+        }
         tokenService.deleteAll(tokenService.findAllByUser(user));
 
         TokenResponse token = jwtService.generateAccess(user);
@@ -89,7 +155,12 @@ public class AuthServiceImpl implements AuthService {
         });
 
         if (!user.isEnabled()) {
-            throw new CustomException(HttpStatus.FORBIDDEN, "This account is disabled");
+            // Firebase has verified this Google identity; allow the verified Google account to proceed.
+            user.setEnabled(true);
+            user.setEmailVerificationCodeHash(null);
+            user.setEmailVerificationExpiresAt(null);
+            user.setEmailVerificationLastSentAt(null);
+            appUserRepository.save(user);
         }
 
         tokenService.deleteAll(tokenService.findAllByUser(user));
