@@ -9,7 +9,6 @@ import com.api.v1.bearerauth.model.enumerate.Roles;
 import com.api.v1.bearerauth.repository.AppUserRepository;
 import com.api.v1.bearerauth.service.FirebaseTokenVerifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import java.security.SecureRandom;
 import java.util.Locale;
 import com.api.v1.bearerauth.model.request.AppUserAddRequest;
 import com.api.v1.bearerauth.model.request.AuthRequest;
