@@ -140,6 +140,7 @@ public class AuthServiceImpl implements AuthService {
             AppUser newUser = new AppUser();
             newUser.setEmail(email);
             newUser.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
+            newUser.setPasswordConfigured(false);
             newUser.setRole(Roles.USER);
             newUser.setEnabled(true);
 
@@ -165,6 +166,7 @@ public class AuthServiceImpl implements AuthService {
 
         tokenService.deleteAll(tokenService.findAllByUser(user));
         TokenResponse token = jwtService.generateAccess(user);
+        token.setRequiresPasswordSetup(!user.isPasswordConfigured());
         saveRefresh(user, token.getRefresh());
         return token;
     }
