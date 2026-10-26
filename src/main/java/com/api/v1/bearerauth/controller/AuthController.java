@@ -27,6 +27,18 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponseUtil.success(HttpStatus.CREATED, authService.create(request)));
     }
 
+    @PostMapping("/verify-email")
+    public ResponseEntity<?> verifyEmail(@Valid @RequestBody EmailVerificationRequest request) {
+        authService.verifyEmail(request.getEmail(), request.getCode());
+        return ResponseEntity.ok(Map.of("message", "Email verified successfully. You can now log in."));
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerification(@Valid @RequestBody EmailVerificationResendRequest request) {
+        authService.resendVerificationCode(request.getEmail());
+        return ResponseEntity.ok(Map.of("message", "A new verification code has been sent."));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<SuccessResponse<TokenResponse>> login(@Valid @RequestBody AuthRequest request) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, authService.login(request)));
