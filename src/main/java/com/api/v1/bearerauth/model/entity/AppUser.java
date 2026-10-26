@@ -35,6 +35,13 @@ public class AppUser implements UserDetails {
     @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean enabled = true;
 
+    @Column(length = 100)
+    private String emailVerificationCodeHash;
+
+    private java.time.LocalDateTime emailVerificationExpiresAt;
+
+    private java.time.LocalDateTime emailVerificationLastSentAt;
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Customer customer;
 
