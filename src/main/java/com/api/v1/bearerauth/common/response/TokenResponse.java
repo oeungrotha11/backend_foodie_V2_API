@@ -18,6 +18,7 @@ public class TokenResponse {
     private String refresh;
     private Date issuedAt;
     private Date expiredAt;
+    private Boolean requiresPasswordSetup;
 
 //    @com.fasterxml.jackson.annotation.JsonProperty("accessToken")
 //    public String getAccessToken() { return access; }
