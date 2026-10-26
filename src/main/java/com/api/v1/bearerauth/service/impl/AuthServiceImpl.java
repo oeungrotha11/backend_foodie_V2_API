@@ -112,15 +112,15 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public TokenResponse login(AuthRequest request) {
         String email = request.getEmail().trim().toLowerCase();
+        AppUser user = appUserRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
+        if (!user.isEnabled()) {
+            throw new CustomException(HttpStatus.FORBIDDEN, "Please verify your email before logging in");
+        }
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, request.getPassword()));
         } catch (AuthenticationException e) {
             throw new CustomException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
-        }
-
-        AppUser user = (AppUser) appUserService.loadUserByUsername(email);
-        if (!user.isEnabled()) {
-            throw new CustomException(HttpStatus.FORBIDDEN, "Please verify your email before logging in");
         }
         tokenService.deleteAll(tokenService.findAllByUser(user));
 
