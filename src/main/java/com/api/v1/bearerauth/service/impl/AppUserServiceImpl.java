@@ -177,6 +177,10 @@ public class AppUserServiceImpl implements AppUserService {
             throw new CustomException(HttpStatus.BAD_REQUEST, "Password and confirm password do not match");
         }
         AppUser user = currentUserService.getCurrentUser();
+        if (user.isPasswordConfigured()) {
+            throw new CustomException(HttpStatus.BAD_REQUEST,
+                    "A Foodie password is already configured. Use the change-password feature instead.");
+        }
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPasswordConfigured(true);
         appUserRepository.save(user);
