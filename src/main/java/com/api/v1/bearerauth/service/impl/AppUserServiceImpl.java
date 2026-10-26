@@ -172,6 +172,17 @@ public class AppUserServiceImpl implements AppUserService {
 
     @Override
     @Transactional
+    public void setPassword(SetPasswordRequest request) {
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "Password and confirm password do not match");
+        }
+        AppUser user = currentUserService.getCurrentUser();
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        appUserRepository.save(user);
+    }
+
+    @Override
+    @Transactional
     public void changePassword(ChangePasswordRequest request) {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName().trim().toLowerCase();
