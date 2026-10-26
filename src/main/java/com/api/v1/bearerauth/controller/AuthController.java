@@ -32,6 +32,13 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, authService.login(request)));
     }
 
+    @PostMapping("/google")
+    public ResponseEntity<SuccessResponse<TokenResponse>> googleLogin(
+            @Valid @RequestBody GoogleLoginRequest request) {
+        return ResponseEntity.ok(ApiResponseUtil.success(
+                HttpStatus.OK, authService.googleLogin(request.getFirebaseIdToken())));
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<SuccessResponse<TokenResponse>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, authService.refresh(request)));
