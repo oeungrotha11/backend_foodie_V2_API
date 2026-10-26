@@ -46,6 +46,7 @@ public class FirebaseTokenVerifier {
             throw new CustomException(HttpStatus.SERVICE_UNAVAILABLE,
                     "Firebase Admin is not configured. Set GOOGLE_APPLICATION_CREDENTIALS on the server.");
         } catch (Exception exception) {
+            exception.printStackTrace();
             throw new CustomException(HttpStatus.UNAUTHORIZED, "Invalid or expired Firebase ID token");
         }
     }

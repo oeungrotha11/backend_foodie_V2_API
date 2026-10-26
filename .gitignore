@@ -35,3 +35,5 @@ out/
 
 ### VS Code ###
 .vscode/
+foodie--signup-firebase-adminsdk-fbsvc-25e73321da.json
+*-firebase-adminsdk-*.json
