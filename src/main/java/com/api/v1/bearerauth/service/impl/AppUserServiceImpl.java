@@ -178,6 +178,7 @@ public class AppUserServiceImpl implements AppUserService {
         }
         AppUser user = currentUserService.getCurrentUser();
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setPasswordConfigured(true);
         appUserRepository.save(user);
     }
 
