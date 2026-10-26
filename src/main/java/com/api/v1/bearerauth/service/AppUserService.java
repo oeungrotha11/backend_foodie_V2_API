@@ -18,6 +18,7 @@ public interface AppUserService extends UserDetailsService {
     void deleteByAdmin(Long id);
     void logout();
     void changePassword(ChangePasswordRequest request);
+    void setPassword(SetPasswordRequest request);
     void forgotPassword(ForgotPasswordRequest request);
     void resetPassword(ResetPasswordRequest request);
 }
