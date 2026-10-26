@@ -83,7 +83,7 @@ public class AppUserServiceImpl implements AppUserService {
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(Roles.USER);
-        user.setEnabled(true);
+        user.setEnabled(false);
 
         Customer customer = new Customer();
         customer.setCustomerName(request.getUsername().trim());
