@@ -37,6 +37,12 @@ app:
     refresh-expiration: 604800000
     secret: ${JWT_SECRET:change-this-to-a-long-random-secret-key-at-least-32-bytes}
 
+payway:
+  base-url: ${PAYWAY_BASE_URL:https://checkout-sandbox.payway.com.kh}
+  merchant-id: ${PAYWAY_MERCHANT_ID:}
+  api-key: ${PAYWAY_API_KEY:}
+  currency: ${PAYWAY_CURRENCY:USD}
+  payment-option: ${PAYWAY_PAYMENT_OPTION:abapay_khqr}
+
 server:
   port: 8080
-
