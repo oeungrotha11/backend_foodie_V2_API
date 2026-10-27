@@ -247,7 +247,7 @@ public class AppUserServiceImpl implements AppUserService {
         message.setTo(user.getEmail());
         message.setSubject("Foodie password reset code");
         message.setText("Your Foodie password reset code is: " + code
-                + "\\n\\nThis code expires in 10 minutes. If you did not request a password reset, ignore this email.");
+                + "\n\nThis code expires in 10 minutes. If you did not request a password reset, ignore this email.");
         mailSender.send(message);
     }
 
