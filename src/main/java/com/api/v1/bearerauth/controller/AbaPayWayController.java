@@ -3,7 +3,6 @@ package com.api.v1.bearerauth.controller;
 import com.api.v1.bearerauth.model.response.OrderResponse;
 import com.api.v1.bearerauth.service.impl.AbaPayWayService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
