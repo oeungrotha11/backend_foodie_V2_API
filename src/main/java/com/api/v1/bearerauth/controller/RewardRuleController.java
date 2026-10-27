@@ -16,7 +16,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/reward-rules")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class RewardRuleController {
     private final RewardService rewardService;
 
@@ -26,28 +25,33 @@ public class RewardRuleController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResponse<RewardRuleResponse>> get(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, rewardService.getRule(id)));
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResponse<RewardRuleResponse>> create(@Valid @RequestBody RewardRuleRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponseUtil.success(HttpStatus.CREATED, rewardService.createRule(request)));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResponse<RewardRuleResponse>> update(
             @PathVariable Long id, @Valid @RequestBody RewardRuleRequest request) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, rewardService.updateRule(id, request)));
     }
 
     @PatchMapping("/{id}/activate")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResponse<RewardRuleResponse>> activate(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, rewardService.activateRule(id)));
     }
 
     @PatchMapping("/{id}/deactivate")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SuccessResponse<RewardRuleResponse>> deactivate(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, rewardService.deactivateRule(id)));
     }
