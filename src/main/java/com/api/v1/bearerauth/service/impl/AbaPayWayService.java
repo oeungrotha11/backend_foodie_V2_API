@@ -10,7 +10,6 @@ import com.api.v1.bearerauth.model.response.OrderResponse;
 import com.api.v1.bearerauth.repository.OrderTbRepository;
 import com.api.v1.bearerauth.security.CurrentUserService;
 import com.api.v1.bearerauth.service.OrderService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -37,7 +36,6 @@ public class AbaPayWayService {
     private final OrderTbRepository orderRepository;
     private final CurrentUserService currentUserService;
     private final OrderService orderService;
-    private final ObjectMapper objectMapper;
 
     @Value("${payway.base-url}")
     private String baseUrl;
