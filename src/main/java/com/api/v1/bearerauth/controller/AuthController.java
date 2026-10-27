@@ -64,7 +64,7 @@ public class AuthController {
         appUserService.forgotPassword(request);
 
         return ResponseEntity.ok(
-                Map.of("message", "Email found. You can reset your password.")
+                Map.of("message", "If an account exists for that email, a reset code has been sent.")
         );
     }
 
