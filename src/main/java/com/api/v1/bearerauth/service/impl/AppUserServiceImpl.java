@@ -21,6 +21,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +37,8 @@ public class AppUserServiceImpl implements AppUserService {
     private final CurrentUserService currentUserService;
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper mapper;
+    private final JavaMailSender mailSender;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Override
     @Transactional(readOnly = true)
@@ -215,11 +221,34 @@ public class AppUserServiceImpl implements AppUserService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         String email = request.getEmail().trim().toLowerCase();
+        AppUser user = appUserRepository.findByEmail(email).orElse(null);
 
-        appUserRepository.findByEmail(email).orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "User not found"));
+        // Use the same public response whether the email exists or not to reduce account enumeration.
+        if (user == null) {
+            return;
+        }
+
+        if (user.getPasswordResetLastSentAt() != null
+                && user.getPasswordResetLastSentAt().plusSeconds(60).isAfter(LocalDateTime.now())) {
+            throw new CustomException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Please wait 60 seconds before requesting another reset code");
+        }
+
+        String code = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+        user.setPasswordResetCodeHash(passwordEncoder.encode(code));
+        user.setPasswordResetExpiresAt(LocalDateTime.now().plusMinutes(10));
+        user.setPasswordResetLastSentAt(LocalDateTime.now());
+        appUserRepository.save(user);
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(user.getEmail());
+        message.setSubject("Foodie password reset code");
+        message.setText("Your Foodie password reset code is: " + code
+                + "\\n\\nThis code expires in 10 minutes. If you did not request a password reset, ignore this email.");
+        mailSender.send(message);
     }
 
     @Override
@@ -230,12 +259,25 @@ public class AppUserServiceImpl implements AppUserService {
         }
 
         String email = request.getEmail().trim().toLowerCase();
+        AppUser user = appUserRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "Invalid or expired reset code"));
 
-        AppUser user = appUserRepository.findByEmail(email).orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "User not found"));
+        if (user.getPasswordResetCodeHash() == null
+                || user.getPasswordResetExpiresAt() == null
+                || user.getPasswordResetExpiresAt().isBefore(LocalDateTime.now())
+                || !passwordEncoder.matches(request.getCode().trim(), user.getPasswordResetCodeHash())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "Invalid or expired reset code");
+        }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-
+        user.setPasswordConfigured(true);
+        user.setPasswordResetCodeHash(null);
+        user.setPasswordResetExpiresAt(null);
+        user.setPasswordResetLastSentAt(null);
         appUserRepository.save(user);
+
+        // Revoke refresh tokens so the user signs in again after password recovery.
+        tokenService.deleteAll(tokenService.findAllByUser(user));
     }
 
 
