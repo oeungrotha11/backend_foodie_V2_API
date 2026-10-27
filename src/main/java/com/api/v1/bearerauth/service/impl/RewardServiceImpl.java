@@ -34,7 +34,11 @@ public class RewardServiceImpl implements RewardService {
 
     @Override
     public List<RewardRuleResponse> listRules() {
-        return rewardRuleRepository.findAll().stream().map(this::toRuleResponse).toList();
+        // The shop carousel is customer-facing, so return only rules that are currently active.
+        return rewardRuleRepository.findAll().stream()
+                .filter(rule -> Boolean.TRUE.equals(rule.getActive()))
+                .map(this::toRuleResponse)
+                .toList();
     }
 
     @Override
