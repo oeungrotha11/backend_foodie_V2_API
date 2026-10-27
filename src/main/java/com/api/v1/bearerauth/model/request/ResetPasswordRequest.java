@@ -13,6 +13,10 @@ public class ResetPasswordRequest {
     @Email(message = "Invalid email format")
     private String email;
 
+    @NotBlank(message = "Verification code cannot be blank")
+    @jakarta.validation.constraints.Pattern(regexp = "^[0-9]{6}$", message = "Verification code must contain 6 digits")
+    private String code;
+
     @NotBlank(message = "New password cannot be blank")
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String newPassword;
