@@ -52,6 +52,9 @@ public class OrderTb {
     @Column(length = 50)
     private String promoCode;
 
+    @Column(length = 50)
+    private String paymentReference;
+
     @Column(nullable = false)
     private Double discount;
 
