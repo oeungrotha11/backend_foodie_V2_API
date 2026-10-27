@@ -45,6 +45,13 @@ public class AppUser implements UserDetails {
 
     private java.time.LocalDateTime emailVerificationLastSentAt;
 
+    @Column(length = 100)
+    private String passwordResetCodeHash;
+
+    private java.time.LocalDateTime passwordResetExpiresAt;
+
+    private java.time.LocalDateTime passwordResetLastSentAt;
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Customer customer;
 
