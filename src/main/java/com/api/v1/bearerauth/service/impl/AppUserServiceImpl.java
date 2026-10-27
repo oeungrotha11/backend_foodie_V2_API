@@ -283,14 +283,7 @@ public class AppUserServiceImpl implements AppUserService {
 
 
     private AppUserDto updateUser(AppUser user, AppUserUpdateRequest request) {
-        String email = request.getEmail().trim().toLowerCase();
-
-        appUserRepository.findByEmail(email).filter(existingUser -> !existingUser.getId().equals(user.getId())).ifPresent(existingUser -> {
-            throw new CustomException(HttpStatus.CONFLICT, "Email already exists");
-        });
-
-        user.setEmail(email);
-
+        // Email is the account's login identity and must not be changed through profile editing.
         Customer customer = user.getCustomer();
 
         if (customer == null) {
