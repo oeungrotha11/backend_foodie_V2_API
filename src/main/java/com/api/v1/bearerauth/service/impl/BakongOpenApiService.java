@@ -56,14 +56,19 @@ public class BakongOpenApiService {
                     HttpStatus.SERVICE_UNAVAILABLE,
                     "Bakong receiving account ID is not configured on the backend.");
         }
-        if (request.amount() == null || request.amount() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Amount must be greater than zero.");
+        if (request.amount() == null || !Double.isFinite(request.amount()) || request.amount() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Amount must be a finite number greater than zero.");
+        }
+        if (request.currency() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A valid KHQR currency is required.");
         }
 
         IndividualInfo info = new IndividualInfo();
 
         info.setBakongAccountId(accountId);
-        info.setCurrency(KHQRCurrency.KHR);
+        // Use the currency requested by checkout. Foodie currently sends USD;
+        // hardcoding KHR can make the SDK reject decimal USD order totals.
+        info.setCurrency(request.currency());
         info.setAmount(request.amount());
         info.setMerchantName(request.merchantName());
         info.setMerchantCity(request.merchantCity());
