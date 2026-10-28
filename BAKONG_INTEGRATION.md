@@ -1,40 +1,38 @@
 # Bakong KHQR integration (feature branch)
 
-## Current first step
+## Configuration
 
-This branch starts with a backend-only token verification check using the official Bakong Open API. The token must be configured on the Spring Boot server and is never returned to Flutter.
-
-## Backend configuration
-
-Set these environment variables before starting Spring Boot:
+Set these environment variables on the Spring Boot backend only:
 
 - `BAKONG_BASE_URL=https://api-bakong.nbc.gov.kh`
-- `BAKONG_API_TOKEN=<the token issued to your registered email>`
+- `BAKONG_API_TOKEN=<token from your Bakong Open API email>`
+- `BAKONG_ACCOUNT_ID=<receiving account ID>`
 
-Do not commit the real token or put it in Flutter.
+Do not commit credentials, put the API token in Flutter, or store the banking password.
 
-## Verify backend token
+## Backend endpoints
 
-After logging in to Foodie, call:
+All endpoints require the normal Foodie access token:
 
-```http
-POST /api/v1/bakong/verify-token
-Authorization: Bearer <Foodie access token>
+- `POST /api/v1/bakong/verify-token` — verifies Open API token configuration.
+- `POST /api/v1/bakong/generate-qr` — generates a KHQR payload for development/integration testing.
+- `POST /api/v1/bakong/check-transaction` — checks a transaction by the KHQR MD5 hash.
+
+Example QR generation request:
+
+```json
+{
+  "amount": 1.00,
+  "currency": "KHR",
+  "billNumber": "FOODIE-TEST-001",
+  "expirationMinutes": 15,
+  "merchantName": "Foodie",
+  "merchantCity": "PHNOM PENH"
+}
 ```
 
-A successful response contains `valid` and `message`; it never includes the Bakong token. This endpoint only verifies Open API credentials. It does not initiate or confirm a customer payment.
+This is the initial integration layer only. Before enabling it in checkout, the backend must create/identify the Foodie order, calculate the amount from persisted order data (never trust a client-supplied total), store the QR MD5 and expiration against that order, and only mark the order purchased after Bakong confirms the matching payment. The current `check-transaction` endpoint is a diagnostic building block, not yet sufficient to mark orders paid.
 
-## Required before adding a live checkout option
+The account password is not needed by these endpoints.
 
-1. Identify the Bakong account ID that will receive the payment (for example, the account ID shown by the bank/Bakong account owner).
-2. Confirm the KHQR generation method and currency with the official KHQR SDK documentation.
-3. Generate a unique, order-specific KHQR on the backend.
-4. Store the expected amount and transaction hash/reference against the order.
-5. Verify the transaction with Bakong from the backend and match the paid amount/currency before marking the order as purchased.
-6. Add the Flutter QR screen and only clear the cart after server-confirmed payment.
-
-The Open API token by itself does not identify the receiving account and does not make an order paid. Do not treat a deeplink return or a customer-side success screen as proof of payment.
-
-Official references:
-- https://api-bakong.nbc.gov.kh/
-- https://api-bakong.nbc.gov.kh/Bakong%20Open%20API%20Docs%20v1.0.1.pdf
+Official documentation: https://api-bakong.nbc.gov.kh/Bakong%20Open%20API%20Docs%20v1.0.1.pdf
