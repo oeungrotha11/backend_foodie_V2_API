@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.api.v1.bearerauth.model.bakong.BakongQrRequest;
 import com.api.v1.bearerauth.model.bakong.BakongQrResult;
 import kh.gov.nbc.bakong_khqr.BakongKHQR;
-import kh.gov.nbc.bakong_khqr.model.KHQRData;
-import kh.gov.nbc.bakong_khqr.model.KHQRResponse;
-import kh.gov.nbc.bakong_khqr.model.MerchantInfo;
+import kh.gov.nbc.bakong_khqr.model.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -32,20 +30,19 @@ public class BakongOpenApiService {
         this.accountId = accountId == null ? "" : accountId.trim();
     }
 
-    public boolean verifyToken() {
+    public Map<String, Object> verifyToken() {
         requireToken();
-        JsonNode response = client.post()
-                .uri("/v1/verify")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiToken)
-                .retrieve()
-                .body(JsonNode.class);
 
-        if (response == null || !response.has("responseCode")) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_GATEWAY,
-                    "Bakong returned an unexpected token verification response.");
-        }
-        return response.path("responseCode").asInt(-1) == 0;
+        return client.post()
+                .uri("/v1/check_bakong_account")
+                .header(
+                        HttpHeaders.AUTHORIZATION,
+                        "Bearer " + apiToken
+                )
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("accountId", accountId))
+                .retrieve()
+                .body(Map.class);
     }
 
     /**
@@ -63,39 +60,54 @@ public class BakongOpenApiService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Amount must be greater than zero.");
         }
 
-        MerchantInfo info = new MerchantInfo();
+        IndividualInfo info = new IndividualInfo();
+
         info.setBakongAccountId(accountId);
+        info.setCurrency(KHQRCurrency.KHR);
+        info.setAmount(request.amount());
         info.setMerchantName(request.merchantName());
         info.setMerchantCity(request.merchantCity());
-        info.setCurrency(request.currency());
-        info.setAmount(request.amount());
         info.setBillNumber(request.billNumber());
-        info.setExpirationTimestamp(System.currentTimeMillis() + request.expirationMinutes() * 60_000L);
+        long expirationTimestamp =
+                System.currentTimeMillis()
+                        + request.expirationMinutes() * 60_000L;
+        info.setExpirationTimestamp(expirationTimestamp);
 
-        KHQRResponse<KHQRData> generated = BakongKHQR.generateMerchant(info);
-        if (generated == null || generated.getKHQRStatus() == null
-                || generated.getKHQRStatus().getCode() != 0
-                || generated.getData() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Bakong KHQR generation failed.");
+        KHQRResponse<KHQRData> response =
+                BakongKHQR.generateIndividual(info);
+
+        if (response.getKHQRStatus().getCode() != 0) {
+            throw new IllegalStateException(
+                    "KHQR generation failed: "
+                            + response.getKHQRStatus().getMessage()
+            );
         }
 
-        KHQRData data = generated.getData();
+        KHQRData data = response.getData();
         return new BakongQrResult(data.getQr(), data.getMd5(), request.amount(),
                 request.currency().name(), request.billNumber(), request.expirationMinutes());
     }
 
-    public JsonNode checkTransactionByMd5(String md5) {
+    public Map<?, ?> checkTransactionByMd5(String md5) {
         requireToken();
         if (md5 == null || !md5.matches("(?i)^[a-f0-9]{32}$")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A valid KHQR MD5 hash is required.");
         }
-        return client.post()
+        Map<?, ?> response = client.post()
                 .uri("/v1/check_transaction_by_md5")
+                .header("Authorization", "Bearer " + apiToken)
                 .contentType(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiToken)
                 .body(Map.of("md5", md5))
                 .retrieve()
-                .body(JsonNode.class);
+                .body(Map.class);
+
+        if (response == null) {
+            throw new IllegalStateException(
+                    "Bakong returned an empty transaction response."
+            );
+        }
+
+        return response;
     }
 
     private void requireToken() {

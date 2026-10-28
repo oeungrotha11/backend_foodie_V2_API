@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -19,13 +20,20 @@ public class BakongController {
 
     @PostMapping("/verify-token")
     public ResponseEntity<Map<String, Object>> verifyToken() {
-        boolean valid = bakongOpenApiService.verifyToken();
-        return ResponseEntity.ok(Map.of(
-                "valid", valid,
-                "message", valid
-                        ? "Bakong API token is valid."
-                        : "Bakong API token was rejected. Check the token and environment."
-        ));
+        Map<String, Object> result = bakongOpenApiService.verifyToken();
+
+        Object code = result.get("responseCode");
+        boolean valid = code instanceof Number
+                && ((Number) code).intValue() == 0;
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("valid", valid);
+        response.put("message", valid
+                ? "Bakong API request succeeded and account exists."
+                : "Bakong API request failed or account could not be verified.");
+        response.put("details", result);
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/generate-qr")
@@ -34,7 +42,8 @@ public class BakongController {
     }
 
     @PostMapping("/check-transaction")
-    public ResponseEntity<JsonNode> checkTransaction(@RequestBody Map<String, String> request) {
-        return ResponseEntity.ok(bakongOpenApiService.checkTransactionByMd5(request.get("md5")));
+    public Map<?, ?> checkTransaction(@RequestBody Map<String, String> request) {
+        String md5 = request.get("md5");
+        return bakongOpenApiService.checkTransactionByMd5(md5);
     }
 }
