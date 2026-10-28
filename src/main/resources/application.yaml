@@ -45,3 +45,6 @@ bakong:
   base-url: ${BAKONG_BASE_URL:https://api-bakong.nbc.gov.kh}
   api-token: ${BAKONG_API_TOKEN:}
   account-id: ${BAKONG_ACCOUNT_ID:}
+  # Development only: simulates a non-payable QR and status check.
+  test-mode: ${BAKONG_TEST_MODE:false}
+  usd-to-khr-rate: ${BAKONG_USD_TO_KHR_RATE:4100}
