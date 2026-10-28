@@ -44,3 +44,4 @@ server:
 bakong:
   base-url: ${BAKONG_BASE_URL:https://api-bakong.nbc.gov.kh}
   api-token: ${BAKONG_API_TOKEN:}
+  account-id: ${BAKONG_ACCOUNT_ID:}
