@@ -24,11 +24,10 @@ public class BakongOpenApiService {
     private final String accountId;
 
     public BakongOpenApiService(
-            RestClient.Builder builder,
             @Value("${bakong.base-url}") String baseUrl,
             @Value("${bakong.api-token:}") String apiToken,
             @Value("${bakong.account-id:}") String accountId) {
-        this.client = builder.baseUrl(baseUrl).build();
+        this.client = RestClient.builder().baseUrl(baseUrl).build();
         this.apiToken = apiToken == null ? "" : apiToken.trim();
         this.accountId = accountId == null ? "" : accountId.trim();
     }
