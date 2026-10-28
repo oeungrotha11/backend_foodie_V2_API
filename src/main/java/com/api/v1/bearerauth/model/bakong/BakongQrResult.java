@@ -6,5 +6,6 @@ public record BakongQrResult(
         Double amount,
         String currency,
         String billNumber,
-        Integer expirationMinutes
+        Integer expirationMinutes,
+        Double displayAmountUsd
 ) {}
