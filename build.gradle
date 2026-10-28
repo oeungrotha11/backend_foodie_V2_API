@@ -30,6 +30,9 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
     implementation 'org.modelmapper:modelmapper:3.2.6'
     implementation 'com.google.firebase:firebase-admin:9.8.0'
+    implementation 'kh.gov.nbc.bakong_khqr:sdk-java:1.0.0.16'
+    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.google.zxing:javase:3.5.3'
 
     def jjwtVersion = '0.13.0'
 
