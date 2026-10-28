@@ -32,6 +32,12 @@ public class Customer {
     @Column(nullable = true, name = "phone_number")
     private String phoneNumber;
 
+    @Column(name = "delivery_latitude")
+    private Double deliveryLatitude;
+
+    @Column(name = "delivery_longitude")
+    private Double deliveryLongitude;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private AppUser user;
