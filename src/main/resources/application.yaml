@@ -7,7 +7,7 @@ spring:
     password: ${DB_PASSWORD:123}
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
+    port: 587
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
     properties:
@@ -48,3 +48,6 @@ bakong:
   # Development only: simulates a non-payable QR and status check.
   test-mode: ${BAKONG_TEST_MODE:false}
   usd-to-khr-rate: ${BAKONG_USD_TO_KHR_RATE:4100}
+  # Explicitly sends the displayed USD number unchanged as KHR on a real QR.
+  # This is not currency conversion and must not be treated as full order payment.
+  same-numeric-khr-mode: ${BAKONG_SAME_NUMERIC_KHR_MODE:false}
