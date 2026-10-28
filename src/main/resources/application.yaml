@@ -40,3 +40,7 @@ app:
 server:
   port: 8080
 
+
+bakong:
+  base-url: ${BAKONG_BASE_URL:https://api-bakong.nbc.gov.kh}
+  api-token: ${BAKONG_API_TOKEN:}
