@@ -90,7 +90,7 @@ public class BakongOpenApiService {
 
         KHQRData data = response.getData();
         return new BakongQrResult(data.getQr(), data.getMd5(), request.amount(),
-                request.currency().name(), request.billNumber(), request.expirationMinutes());
+                currency.name(), request.billNumber(), request.expirationMinutes());
     }
 
     public Map<?, ?> checkTransactionByMd5(String md5) {
