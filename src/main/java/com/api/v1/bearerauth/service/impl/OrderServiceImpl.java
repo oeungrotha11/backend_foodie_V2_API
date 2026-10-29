@@ -4,6 +4,7 @@ import com.api.v1.bearerauth.common.exception.CustomException;
 import com.api.v1.bearerauth.model.entity.*;
 import com.api.v1.bearerauth.model.enumerate.OrderStatus;
 import com.api.v1.bearerauth.model.enumerate.OrderType;
+import com.api.v1.bearerauth.model.enumerate.PaymentStatus;
 import com.api.v1.bearerauth.model.enumerate.OptionType;
 import com.api.v1.bearerauth.model.request.OrderRequest;
 import com.api.v1.bearerauth.model.request.OrderStatusRequest;
@@ -72,6 +73,7 @@ public class OrderServiceImpl implements OrderService {
         order.setCustomer(customer);
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(OrderStatus.processing);
+        order.setPaymentStatus(PaymentStatus.UNPAID);
         applyOrderFieldsAndItems(order, request);
 
         // Flush first so the order has an ID before the reward references it.
@@ -197,6 +199,7 @@ public class OrderServiceImpl implements OrderService {
         response.setStatus(order.getStatus());
         response.setOrderType(order.getOrderType());
         response.setPaymentMethod(order.getPaymentMethod());
+        response.setPaymentStatus(order.getPaymentStatus());
         response.setDeliveryAddress(order.getDeliveryAddress());
         response.setDeliveryFee(roundMoney(order.getDeliveryFee() == null ? 0.0 : order.getDeliveryFee()));
         response.setDiscount(roundMoney(order.getDiscount() == null ? 0.0 : order.getDiscount()));
