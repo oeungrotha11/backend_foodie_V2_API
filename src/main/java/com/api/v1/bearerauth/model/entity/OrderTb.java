@@ -42,7 +42,7 @@ public class OrderTb {
     private PaymentMethod paymentMethod;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 20, columnDefinition = "varchar(20) default 'UNPAID'")
     private PaymentStatus paymentStatus = PaymentStatus.UNPAID;
 
     @Column(length = 500)
