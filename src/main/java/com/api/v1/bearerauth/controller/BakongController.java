@@ -6,8 +6,7 @@ import com.api.v1.bearerauth.model.entity.AppUser;
 import com.api.v1.bearerauth.model.entity.BakongPayment;
 import com.api.v1.bearerauth.model.entity.OrderTb;
 import com.api.v1.bearerauth.model.enumerate.OrderStatus;
-import com.api.v1.bearerauth.model.request.OrderStatusRequest;
-import com.api.v1.bearerauth.service.OrderService;
+import com.api.v1.bearerauth.model.enumerate.PaymentStatus;
 import com.api.v1.bearerauth.repository.BakongPaymentRepository;
 import com.api.v1.bearerauth.repository.OrderTbRepository;
 import com.api.v1.bearerauth.security.CurrentUserService;
@@ -31,7 +30,6 @@ public class BakongController {
     private final BakongPaymentRepository paymentRepository;
     private final OrderTbRepository orderRepository;
     private final CurrentUserService currentUserService;
-    private final OrderService orderService;
 
     @PostMapping("/verify-token")
     public ResponseEntity<Map<String, Object>> verifyToken() {
@@ -85,6 +83,8 @@ public class BakongController {
         payment.setPaidAt(null);
         payment.setExpiresAt(LocalDateTime.now().plusMinutes(qr.expirationMinutes()));
         paymentRepository.saveAndFlush(payment);
+        order.setPaymentStatus(PaymentStatus.PENDING);
+        orderRepository.save(order);
         return ResponseEntity.ok(qr);
     }
 
@@ -108,6 +108,8 @@ public class BakongController {
         if (!payment.getExpiresAt().isAfter(LocalDateTime.now())) {
             payment.setStatus("EXPIRED");
             paymentRepository.save(payment);
+            order.setPaymentStatus(PaymentStatus.EXPIRED);
+            orderRepository.save(order);
             return Map.of("responseCode", 1, "responseMessage", "This QR payment request has expired.");
         }
 
@@ -121,12 +123,9 @@ public class BakongController {
             payment.setStatus("PAID");
             payment.setPaidAt(LocalDateTime.now());
             paymentRepository.save(payment);
-            if (order.getStatus() == OrderStatus.processing) {
-                OrderStatusRequest statusRequest = new OrderStatusRequest();
-                statusRequest.setStatus(OrderStatus.purchased);
-                // Reuse the order workflow so reward reservations/earning rules run too.
-                orderService.updateStatus(order.getOrderId(), statusRequest);
-            }
+            // Payment confirmation must never change the chef's order status.
+            order.setPaymentStatus(PaymentStatus.PAID);
+            orderRepository.save(order);
         }
         return result;
     }
