@@ -48,6 +48,12 @@ public class OrderTb {
     @Column(length = 500)
     private String deliveryAddress;
 
+    @Column(name = "delivery_latitude")
+    private Double deliveryLatitude;
+
+    @Column(name = "delivery_longitude")
+    private Double deliveryLongitude;
+
     @Column(nullable = false)
     private Double deliveryFee;
 

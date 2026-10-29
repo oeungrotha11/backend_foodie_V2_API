@@ -31,6 +31,8 @@ public class DeliveryAddressController {
         c.setAddress(r.getAddress().trim());
         c.setCity(r.getCity().trim());
         c.setPhoneNumber(r.getPhone().trim());
+        c.setDeliveryLatitude(r.getLatitude());
+        c.setDeliveryLongitude(r.getLongitude());
         repo.save(c);
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, response(c)));
     }
@@ -41,6 +43,6 @@ public class DeliveryAddressController {
     }
 
     private DeliveryAddressResponse response(Customer c) {
-        return new DeliveryAddressResponse(c.getAddress(), c.getCity(), c.getPhoneNumber());
+        return new DeliveryAddressResponse(c.getAddress(), c.getCity(), c.getPhoneNumber(), c.getDeliveryLatitude(), c.getDeliveryLongitude());
     }
 }

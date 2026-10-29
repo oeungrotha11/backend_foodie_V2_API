@@ -11,4 +11,6 @@ public class DeliveryAddressRequest {
     private String city;
     @NotBlank
     private String phone;
+    private Double latitude;
+    private Double longitude;
 }

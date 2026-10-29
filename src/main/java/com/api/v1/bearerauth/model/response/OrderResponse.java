@@ -29,6 +29,9 @@ public class OrderResponse {
     @JsonProperty("address")
     private String deliveryAddress;
 
+    private Double deliveryLatitude;
+    private Double deliveryLongitude;
+
     private Double subtotal;
     private Double deliveryFee;
 
