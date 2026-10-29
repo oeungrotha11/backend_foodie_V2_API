@@ -3,6 +3,7 @@ package com.api.v1.bearerauth.model.bakong;
 import kh.gov.nbc.bakong_khqr.model.KHQRCurrency;
 
 public record BakongQrRequest(
+        Long orderId,
         Double amount,
         KHQRCurrency currency,
         String billNumber,
