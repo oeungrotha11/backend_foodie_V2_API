@@ -3,6 +3,7 @@ package com.api.v1.bearerauth.model.entity;
 import com.api.v1.bearerauth.model.enumerate.OrderStatus;
 import com.api.v1.bearerauth.model.enumerate.OrderType;
 import com.api.v1.bearerauth.model.enumerate.PaymentMethod;
+import com.api.v1.bearerauth.model.enumerate.PaymentStatus;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -39,6 +40,10 @@ public class OrderTb {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentMethod paymentMethod;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false, length = 20)
+    private PaymentStatus paymentStatus = PaymentStatus.UNPAID;
 
     @Column(length = 500)
     private String deliveryAddress;
