@@ -46,6 +46,8 @@ public class AdminDeliveryController {
         profile.setUser(user);
         profile.setApproved(false);
         profile.setAvailable(false);
+        profile.setFullName(request.getFullName().trim());
+        profile.setPhoneNumber(request.getPhoneNumber());
         profile.setVehicleType(request.getVehicleType());
         profile.setVehiclePlate(request.getVehiclePlate());
         drivers.save(profile);
@@ -58,7 +60,7 @@ public class AdminDeliveryController {
     @Transactional(readOnly = true)
     public ResponseEntity<SuccessResponse<List<DriverResponse>>> listDrivers() {
         List<DriverResponse> result = drivers.findAll().stream()
-                .map(p -> driverResponse(p, p.getUser().getEmail(), null)).toList();
+                .map(p -> driverResponse(p, p.getFullName(), p.getPhoneNumber())).toList();
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, result));
     }
 
