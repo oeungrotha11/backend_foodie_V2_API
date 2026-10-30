@@ -146,6 +146,8 @@ public class OrderServiceImpl implements OrderService {
             throw new CustomException(HttpStatus.BAD_REQUEST, "Delivery address is required");
         }
         order.setDeliveryAddress(isDelivery ? request.getDeliveryAddress().trim() : "");
+        order.setDeliveryLatitude(isDelivery ? request.getDeliveryLatitude() : null);
+        order.setDeliveryLongitude(isDelivery ? request.getDeliveryLongitude() : null);
         order.setDeliveryFee(isDelivery ? DELIVERY_FEE : 0.0);
 
         order.getItems().clear();
@@ -198,6 +200,8 @@ public class OrderServiceImpl implements OrderService {
         response.setOrderType(order.getOrderType());
         response.setPaymentMethod(order.getPaymentMethod());
         response.setDeliveryAddress(order.getDeliveryAddress());
+        response.setDeliveryLatitude(order.getDeliveryLatitude());
+        response.setDeliveryLongitude(order.getDeliveryLongitude());
         response.setDeliveryFee(roundMoney(order.getDeliveryFee() == null ? 0.0 : order.getDeliveryFee()));
         response.setDiscount(roundMoney(order.getDiscount() == null ? 0.0 : order.getDiscount()));
         response.setTotalAmount(roundMoney(order.getTotalAmount() == null ? 0.0 : order.getTotalAmount()));
