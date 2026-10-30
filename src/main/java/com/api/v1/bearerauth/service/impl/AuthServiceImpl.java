@@ -115,6 +115,9 @@ public class AuthServiceImpl implements AuthService {
         AppUser user = appUserRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
         if (!user.isEnabled()) {
+            if (user.getRole() == Roles.DRIVER) {
+                throw new CustomException(HttpStatus.FORBIDDEN, "Your driver account is awaiting admin approval");
+            }
             throw new CustomException(HttpStatus.FORBIDDEN, "Please verify your email before logging in");
         }
         try {
