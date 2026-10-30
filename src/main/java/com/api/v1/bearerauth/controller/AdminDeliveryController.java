@@ -4,6 +4,7 @@ import com.api.v1.bearerauth.common.exception.CustomException;
 import com.api.v1.bearerauth.common.response.SuccessResponse;
 import com.api.v1.bearerauth.model.entity.*;
 import com.api.v1.bearerauth.model.enumerate.OrderType;
+import com.api.v1.bearerauth.model.enumerate.OrderStatus;
 import com.api.v1.bearerauth.model.enumerate.Roles;
 import com.api.v1.bearerauth.model.request.*;
 import com.api.v1.bearerauth.model.response.*;
@@ -83,6 +84,7 @@ public class AdminDeliveryController {
     public ResponseEntity<SuccessResponse<DeliveryResponse>> assign(@Valid @RequestBody DeliveryAssignmentRequest request) {
         OrderTb order = orders.findById(request.getOrderId()).orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Order not found"));
         if (order.getOrderType() != OrderType.DELIVERY) throw new CustomException(HttpStatus.BAD_REQUEST, "Only delivery orders can be assigned");
+        if (order.getStatus() != OrderStatus.purchased) throw new CustomException(HttpStatus.BAD_REQUEST, "Only confirmed orders can be assigned");
         if (order.getDeliveryLatitude() == null || order.getDeliveryLongitude() == null)
             throw new CustomException(HttpStatus.BAD_REQUEST, "This order has no saved delivery coordinates");
         if (deliveries.findByOrderOrderId(order.getOrderId()).isPresent())
