@@ -20,9 +20,6 @@ public class OrderRequest {
 
     private String deliveryAddress;
 
-    private Double deliveryLatitude;
-    private Double deliveryLongitude;
-
     // Optional: the customer may select one reward from their wallet at checkout.
     @Positive(message = "Reward ID must be positive")
     private Long rewardId;

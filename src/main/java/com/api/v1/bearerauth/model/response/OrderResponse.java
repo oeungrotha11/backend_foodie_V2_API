@@ -47,4 +47,3 @@ public class OrderResponse {
     private Double discount;
     private List<OrderItemResponse> items;
 }
-
