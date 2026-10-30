@@ -112,7 +112,13 @@ public class GoogleMapsController {
                         "Google Maps request failed (HTTP " + response.statusCode() + "). Check enabled APIs and the server API key.");
             }
             if (json.has("status") && !"OK".equals(json.path("status").asText())) {
-                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Geocoding failed: " + json.path("status").asText());
+                String status = json.path("status").asText();
+                String reason = json.path("error_message").asText("No additional details provided.");
+
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_GATEWAY,
+                        "Google Geocoding failed: " + status + " - " + reason
+                );
             }
             return json;
         } catch (ResponseStatusException e) {
@@ -124,8 +130,12 @@ public class GoogleMapsController {
 
     private String apiKey() {
         String key = System.getenv("GOOGLE_MAPS_SERVER_API_KEY");
-        if (key == null || key.isBlank()) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                "Google Maps server API key is not configured. Set GOOGLE_MAPS_SERVER_API_KEY.");
+        if (key == null || key.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "Google Maps server API key is not configured. Set GOOGLE_MAPS_SERVER_API_KEY."
+            );
+        }
         return key;
     }
 

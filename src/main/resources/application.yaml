@@ -48,3 +48,7 @@ bakong:
   # Development only: simulates a non-payable QR and status check.
   test-mode: ${BAKONG_TEST_MODE:false}
   usd-to-khr-rate: ${BAKONG_USD_TO_KHR_RATE:4100}
+
+google:
+  maps:
+    server-api-key: ${GOOGLE_MAPS_SERVER_API_KEY:}
