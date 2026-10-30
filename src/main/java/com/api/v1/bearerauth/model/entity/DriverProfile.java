@@ -26,6 +26,8 @@ public class DriverProfile {
     @Column(nullable = false)
     private boolean available = false;
 
+    private String fullName;
+    private String phoneNumber;
     private String vehicleType;
     private String vehiclePlate;
     private LocalDateTime createdAt = LocalDateTime.now();
