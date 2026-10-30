@@ -43,6 +43,11 @@ public class OrderTb {
     @Column(length = 500)
     private String deliveryAddress;
 
+    // Coordinates are stored per order because a customer can choose a different
+    // delivery point for each checkout.
+    private Double deliveryLatitude;
+    private Double deliveryLongitude;
+
     @Column(nullable = false)
     private Double deliveryFee;
 
