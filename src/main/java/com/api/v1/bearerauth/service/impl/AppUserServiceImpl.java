@@ -309,13 +309,14 @@ public class AppUserServiceImpl implements AppUserService {
         dto.setId(user.getId());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
-        dto.setAddress(user.getCustomer().getAddress());
-        dto.setCity(user.getCustomer().getCity());
-        dto.setPhoneNumber(user.getCustomer().getPhoneNumber());
-
         if (user.getCustomer() != null) {
             dto.setCustomerId(user.getCustomer().getCustomerId());
             dto.setUsername(user.getCustomer().getCustomerName());
+            dto.setAddress(user.getCustomer().getAddress());
+            dto.setCity(user.getCustomer().getCity());
+            dto.setPhoneNumber(user.getCustomer().getPhoneNumber());
+        } else {
+            dto.setUsername(user.getEmail());
         }
 
         return dto;
