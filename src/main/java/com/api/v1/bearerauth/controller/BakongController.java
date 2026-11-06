@@ -130,6 +130,54 @@ public class BakongController {
         return result;
     }
 
+    @PostMapping("/cancel-payment")
+    @Transactional
+    public Map<String, Object> cancelPayment(@RequestBody Map<String, String> request) {
+        String md5 = request.get("md5");
+        if (md5 == null || !md5.matches("(?i)^[a-f0-9]{32}$")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A valid KHQR MD5 hash is required.");
+        }
+
+        BakongPayment payment = paymentRepository.findByMd5IgnoreCase(md5)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment request not found."));
+        OrderTb order = orderRepository.findById(payment.getOrderId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found."));
+        ensureOrderOwner(order);
+
+        if ("PAID".equals(payment.getStatus()) || order.getPaymentStatus() == PaymentStatus.PAID) {
+            return Map.of("cancelled", false, "paymentStatus", "PAID",
+                    "message", "Payment was already confirmed. The order was not cancelled.");
+        }
+        if (order.getStatus() == OrderStatus.cancelled) {
+            return Map.of("cancelled", true, "paymentStatus", order.getPaymentStatus().name(),
+                    "message", "This order is already cancelled.");
+        }
+
+        // Check once more with Bakong before cancelling to avoid a late-payment race.
+        Map<?, ?> result = bakongOpenApiService.checkTransactionByMd5(payment.getMd5());
+        Object dataValue = result.get("data");
+        boolean simulated = dataValue instanceof Map<?, ?> data && Boolean.TRUE.equals(data.get("testMode"));
+        Object code = result.get("responseCode");
+        boolean confirmed = code instanceof Number && ((Number) code).intValue() == 0 && !simulated;
+        if (confirmed) {
+            payment.setStatus("PAID");
+            payment.setPaidAt(LocalDateTime.now());
+            paymentRepository.save(payment);
+            order.setPaymentStatus(PaymentStatus.PAID);
+            orderRepository.save(order);
+            return Map.of("cancelled", false, "paymentStatus", "PAID",
+                    "message", "Payment was confirmed before cancellation.");
+        }
+
+        payment.setStatus("EXPIRED");
+        paymentRepository.save(payment);
+        order.setPaymentStatus(PaymentStatus.EXPIRED);
+        order.setStatus(OrderStatus.cancelled);
+        orderRepository.save(order);
+        return Map.of("cancelled", true, "paymentStatus", "EXPIRED",
+                "message", "Unpaid order and payment request were cancelled.");
+    }
+
     private void ensureOrderOwner(OrderTb order) {
         AppUser user = currentUserService.getCurrentUser();
         boolean admin = user.getRole() != null && user.getRole().name().equals("ADMIN");
