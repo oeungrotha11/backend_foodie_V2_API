@@ -23,10 +23,18 @@ import java.util.Set;
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('DRIVER')")
 public class DriverDeliveryController {
+    private static final List<String> ACTIVE_STATUSES = List.of("ASSIGNED", "PICKED_UP", "ON_THE_WAY");
     private static final Set<String> ALLOWED = Set.of("PICKED_UP", "ON_THE_WAY", "DELIVERED");
     private final CurrentUserService currentUser;
     private final DriverProfileRepository drivers;
     private final DeliveryRepository deliveries;
+
+    @GetMapping("/availability")
+    @Transactional(readOnly = true)
+    public ResponseEntity<SuccessResponse<Boolean>> getAvailability() {
+        DriverProfile profile = requireApproved(currentUser.getCurrentUser());
+        return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, profile.isAvailable()));
+    }
 
     @GetMapping("/deliveries/current")
     @Transactional(readOnly = true)
@@ -43,10 +51,13 @@ public class DriverDeliveryController {
     @PatchMapping("/availability")
     @Transactional
     public ResponseEntity<SuccessResponse<Boolean>> availability(@Valid @RequestBody DriverAvailabilityRequest request) {
-        DriverProfile profile = requireApproved(currentUser.getCurrentUser());
-        if (request.getAvailable() && deliveries.findFirstByDriverAndStatusInOrderByAssignedAtDesc(
-                profile.getUser(), List.of("ASSIGNED", "PICKED_UP", "ON_THE_WAY")).isPresent())
-            throw new CustomException(HttpStatus.CONFLICT, "Complete your active delivery before becoming available");
+        AppUser user = currentUser.getCurrentUser();
+        DriverProfile profile = drivers.findByUserForUpdate(user)
+                .orElseThrow(() -> new CustomException(HttpStatus.FORBIDDEN, "Driver profile not found"));
+        if (!profile.isApproved() || !user.isEnabled())
+            throw new CustomException(HttpStatus.FORBIDDEN, "Driver account is awaiting admin approval");
+        if (request.getAvailable() && deliveries.existsByDriverAndStatusIn(user, ACTIVE_STATUSES))
+            throw new CustomException(HttpStatus.CONFLICT, "Complete your active delivery before going online");
         profile.setAvailable(request.getAvailable());
         drivers.save(profile);
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, profile.isAvailable()));
@@ -68,12 +79,7 @@ public class DriverDeliveryController {
         if (!valid) throw new CustomException(HttpStatus.BAD_REQUEST, "Invalid delivery status transition");
         delivery.setStatus(next);
         if (next.equals("PICKED_UP")) delivery.setPickedUpAt(LocalDateTime.now());
-        if (next.equals("DELIVERED")) {
-            delivery.setDeliveredAt(LocalDateTime.now());
-            DriverProfile profile = drivers.findByUser(driver).orElseThrow();
-            profile.setAvailable(true);
-            drivers.save(profile);
-        }
+        if (next.equals("DELIVERED")) delivery.setDeliveredAt(LocalDateTime.now());
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, response(delivery)));
     }
 
@@ -82,8 +88,7 @@ public class DriverDeliveryController {
     public ResponseEntity<SuccessResponse<DeliveryResponse>> updateLocation(@Valid @RequestBody DriverLocationRequest request) {
         AppUser driver = currentUser.getCurrentUser();
         requireApproved(driver);
-        Delivery delivery = deliveries.findFirstByDriverAndStatusInOrderByAssignedAtDesc(
-                driver, List.of("ASSIGNED", "PICKED_UP", "ON_THE_WAY"))
+        Delivery delivery = deliveries.findFirstByDriverAndStatusInOrderByAssignedAtDesc(driver, ACTIVE_STATUSES)
                 .orElseThrow(() -> new CustomException(HttpStatus.CONFLICT, "You have no active delivery"));
         delivery.setDriverLatitude(request.getLatitude());
         delivery.setDriverLongitude(request.getLongitude());
