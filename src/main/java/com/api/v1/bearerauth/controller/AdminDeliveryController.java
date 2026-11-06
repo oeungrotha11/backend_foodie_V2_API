@@ -24,6 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminDeliveryController {
+    private static final List<String> ACTIVE_STATUSES = List.of("ASSIGNED", "PICKED_UP", "ON_THE_WAY");
     private final AppUserRepository users;
     private final DriverProfileRepository drivers;
     private final DeliveryRepository deliveries;
@@ -65,14 +66,24 @@ public class AdminDeliveryController {
         return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, result));
     }
 
+    @GetMapping("/drivers/available")
+    @Transactional(readOnly = true)
+    public ResponseEntity<SuccessResponse<List<DriverResponse>>> listAvailableDrivers() {
+        List<DriverResponse> result = drivers.findByApprovedTrue().stream()
+                .filter(p -> p.isAvailable() && p.getUser().isEnabled())
+                .filter(p -> !deliveries.existsByDriverAndStatusIn(p.getUser(), ACTIVE_STATUSES))
+                .map(p -> driverResponse(p, p.getFullName(), p.getPhoneNumber())).toList();
+        return ResponseEntity.ok(ApiResponseUtil.success(HttpStatus.OK, result));
+    }
+
     @PatchMapping("/drivers/{userId}/approval")
     @Transactional
     public ResponseEntity<SuccessResponse<DriverResponse>> approveDriver(@PathVariable Long userId, @RequestParam boolean approved) {
         AppUser user = users.findById(userId).orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Driver account not found"));
         if (user.getRole() != Roles.DRIVER) throw new CustomException(HttpStatus.BAD_REQUEST, "Account is not a driver");
-        DriverProfile profile = drivers.findByUser(user).orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Driver profile not found"));
+        DriverProfile profile = drivers.findByUserForUpdate(user).orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Driver profile not found"));
         profile.setApproved(approved);
-        profile.setAvailable(approved && profile.isAvailable());
+        if (!approved) profile.setAvailable(false);
         user.setEnabled(approved);
         users.save(user);
         drivers.save(profile);
@@ -91,9 +102,12 @@ public class AdminDeliveryController {
             throw new CustomException(HttpStatus.CONFLICT, "This order already has a delivery assignment");
 
         AppUser driverUser = users.findById(request.getDriverUserId()).orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "Driver not found"));
-        DriverProfile profile = drivers.findByUser(driverUser).orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "Account is not a registered driver"));
+        DriverProfile profile = drivers.findByUserForUpdate(driverUser)
+                .orElseThrow(() -> new CustomException(HttpStatus.BAD_REQUEST, "Account is not a registered driver"));
         if (!profile.isApproved() || !driverUser.isEnabled()) throw new CustomException(HttpStatus.FORBIDDEN, "Driver is not approved");
-        if (!profile.isAvailable()) throw new CustomException(HttpStatus.CONFLICT, "Driver is not available");
+        if (!profile.isAvailable()) throw new CustomException(HttpStatus.CONFLICT, "Driver is offline");
+        if (deliveries.existsByDriverAndStatusIn(driverUser, ACTIVE_STATUSES))
+            throw new CustomException(HttpStatus.CONFLICT, "Driver already has an active delivery");
 
         Delivery delivery = new Delivery();
         delivery.setOrder(order);
