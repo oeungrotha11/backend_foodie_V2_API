@@ -105,6 +105,9 @@ public class BakongController {
             return Map.of("responseCode", 0, "responseMessage", "Payment already confirmed.",
                     "data", Map.of("md5", payment.getMd5(), "status", "SUCCESS", "alreadyPaid", true));
         }
+        if ("EXPIRED".equals(payment.getStatus()) || order.getStatus() == OrderStatus.cancelled) {
+            return Map.of("responseCode", 1, "responseMessage", "This payment request was cancelled.");
+        }
         if (!payment.getExpiresAt().isAfter(LocalDateTime.now())) {
             payment.setStatus("EXPIRED");
             paymentRepository.save(payment);
